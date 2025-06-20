@@ -3,7 +3,7 @@ entries:
   paperless-ngx-suite:
   - apiVersion: v2
     appVersion: 1.17.4
-    created: "2025-06-20T15:12:16.512068372Z"
+    created: "2025-06-20T15:18:51.326509671Z"
     dependencies:
     - name: paperless-ngx
       repository: file://charts/paperless-ngx
@@ -20,7 +20,7 @@ entries:
       repository: https://charts.bitnami.com/bitnami
       version: 20.1.7
     description: A Helm chart for Paperless-NGX suite with AI capabilities
-    digest: cf30af942cfb84f0933cb2deac658688e4c38e3b9437657c6469f5a7f52ead6f
+    digest: cb8d58cc4b8023502cd771db02dd4e24dba803963c4addf9a465bdd35499c5ff
     icon: https://docs.paperless-ngx.com/assets/logo.svg
     keywords:
     - paperless
@@ -37,4 +37,4 @@ entries:
     urls:
     - https://michael-pisman.github.io/paperless-ngx-suite/paperless-ngx-suite-0.1.0.tgz
     version: 0.1.0
-generated: "2025-06-20T15:12:16.496700866Z"
+generated: "2025-06-20T15:18:51.310663874Z"
