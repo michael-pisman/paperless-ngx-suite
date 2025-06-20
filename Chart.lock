@@ -1,0 +1,15 @@
+dependencies:
+- name: paperless-ngx
+  repository: file://charts/paperless-ngx
+  version: 1.0.0
+- name: paperless-ai
+  repository: file://charts/paperless-ai
+  version: 0.1.0
+- name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 15.5.32
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 20.1.7
+digest: sha256:58b730281e060c3731c5c5abb4e042c4bcc70056e29ab93ad85d44818a0579de
+generated: "2025-06-20T03:45:59.694418302-07:00"

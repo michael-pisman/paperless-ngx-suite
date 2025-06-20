@@ -1,0 +1,53 @@
+{{- if .Values.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "paperless-ai.fullname" . }}-data
+  labels:
+    {{- include "paperless-ai.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- end }}
+---
+{{- end }}
+{{- if .Values.persistence.vectorDb.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "paperless-ai.fullname" . }}-vectordb
+  labels:
+    {{- include "paperless-ai.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.vectorDb.size }}
+  {{- if .Values.persistence.vectorDb.storageClass }}
+  storageClassName: {{ .Values.persistence.vectorDb.storageClass }}
+  {{- end }}
+---
+{{- end }}
+{{- if .Values.persistence.models.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "paperless-ai.fullname" . }}-models
+  labels:
+    {{- include "paperless-ai.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.models.size }}
+  {{- if .Values.persistence.models.storageClass }}
+  storageClassName: {{ .Values.persistence.models.storageClass }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,393 @@
+# Global configuration
+global:
+  # Common database configuration
+  database:
+    type: postgresql  # postgresql or mariadb
+    host: ""
+    port: 5432
+    name: paperless
+    username: paperless
+    password: ""
+    # Use existing secret for database credentials
+    existingSecret: ""
+    secretKeys:
+      password: "password"
+  
+  # Common Redis configuration
+  redis:
+    enabled: true
+    host: ""
+    port: 6379
+    password: ""
+    database: 0
+    # Use existing secret for Redis credentials
+    existingSecret: ""
+    secretKeys:
+      password: "password"
+
+paperless-ngx:
+  # Application settings
+  replicaCount: 1
+  
+  image:
+    repository: ghcr.io/paperless-ngx/paperless-ngx
+    pullPolicy: IfNotPresent
+    tag: "1.17.4"
+  
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+  
+  # Ingress configuration
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: paperless.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  # Persistence configuration
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 20Gi
+    # Additional volume mounts
+    media:
+      enabled: true
+      size: 50Gi
+      storageClass: ""
+    data:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+    export:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+    consume:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+  
+  # Paperless-NGX specific environment variables
+  config:
+    # Basic settings
+    url: "http://localhost:8000"
+    secretKey: ""  # Will be generated if not provided
+    allowedHosts: "*"
+    corsAllowedHosts: "http://localhost:8000"
+    forceScriptName: ""
+    staticUrl: "/static/"
+    
+    # User settings
+    adminUser: "admin"
+    adminMail: "admin@example.com"
+    adminPassword: ""  # Should be set via secret
+    
+    # OCR settings
+    ocrLanguage: "eng"
+    ocrMode: "skip"
+    ocrSkipArchiveFile: "with_text"
+    ocrCleanUpArchiveFile: "false"
+    ocrDeskew: "true"
+    ocrRotatePages: "true"
+    ocrRotatePagesThreshold: "12.0"
+    
+    # Document processing
+    consumerPolling: "0"
+    consumerRecursive: "true"
+    consumerSubdirAsTag: "true"
+    consumerIgnorePattern: "[!.]*,.*"
+    taskWorkers: "1"
+    threadsPerWorker: "1"
+    workerTimeout: "1800"
+    
+    # Document retention
+    documentRetentionDays: ""
+    
+    # Email settings
+    emailHost: ""
+    emailPort: "587"
+    emailHostUser: ""
+    emailHostPassword: ""
+    emailUseSSL: "false"
+    emailUseTLS: "true"
+    
+    # Internationalization
+    timeZone: "UTC"
+    
+    # Logging
+    logLevel: "WARNING"
+    
+    # Custom environment variables
+    extraEnv: {}
+  
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  # Node selector and affinity
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  # Security context
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+
+paperless-ai:
+  # Application settings
+  replicaCount: 1
+  
+  image:
+    repository: ghcr.io/paperless-ngx/paperless-ai
+    pullPolicy: IfNotPresent
+    tag: "0.1.0"
+  
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  
+  # Ingress configuration
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: paperless-ai.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  # AI/ML Configuration
+  config:
+    # LLM Model settings
+    llm:
+      provider: "openai"  # openai, anthropic, ollama, huggingface
+      model: "gpt-3.5-turbo"
+      apiKey: ""
+      apiUrl: ""  # For custom endpoints
+      maxTokens: 4096
+      temperature: 0.1
+      
+    # Ollama specific settings (if using ollama)
+    ollama:
+      host: "localhost"
+      port: 11434
+      model: "llama2"
+      
+    # Hugging Face settings (if using huggingface)
+    huggingface:
+      apiKey: ""
+      model: "google/flan-t5-base"
+      
+    # Document processing settings
+    processing:
+      chunkSize: 1000
+      chunkOverlap: 200
+      batchSize: 10
+      maxDocumentSize: "50MB"
+      supportedFormats: "pdf,txt,docx,html"
+      
+    # Embedding settings
+    embeddings:
+      provider: "openai"  # openai, huggingface, sentence-transformers
+      model: "text-embedding-ada-002"
+      dimensions: 1536
+      
+    # Vector database settings
+    vectorDb:
+      provider: "chroma"  # chroma, pinecone, weaviate
+      persistPath: "/app/vectordb"
+      
+    # Cache settings
+    cache:
+      enabled: true
+      ttl: 3600  # seconds
+      maxSize: 1000
+      
+    # Performance settings
+    workers: 2
+    maxConcurrentRequests: 10
+    requestTimeout: 300
+    
+    # Logging
+    logLevel: "INFO"
+    enableMetrics: true
+    
+    # Custom environment variables
+    extraEnv: {}
+  
+  # Persistence for AI models and vector database
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    vectorDb:
+      enabled: true
+      size: 20Gi
+      storageClass: ""
+    models:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+  
+  # Resource limits and requests
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+  
+  # Node selector and affinity
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  # Security context
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+
+# External dependencies using Bitnami charts
+# PostgreSQL database (Bitnami)
+postgresql:
+  enabled: false
+  auth:
+    postgresPassword: ""
+    username: "paperless"
+    password: ""
+    database: "paperless"
+    # Use existing secret for credentials
+    existingSecret: ""
+    secretKeys:
+      adminPasswordKey: "postgres-password"
+      userPasswordKey: "password"
+  
+  # PostgreSQL configuration
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: ""
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    # PostgreSQL configuration
+    pgHbaConfiguration: |-
+      local all all trust
+      host all all 127.0.0.1/32 trust
+      host all all ::1/128 trust
+      host all all all md5
+    configuration: |-
+      # PostgreSQL configuration for Paperless
+      max_connections = 200
+      shared_buffers = 256MB
+      effective_cache_size = 1GB
+      maintenance_work_mem = 64MB
+      checkpoint_completion_target = 0.9
+      wal_buffers = 16MB
+      default_statistics_target = 100
+      random_page_cost = 1.1
+      effective_io_concurrency = 200
+      work_mem = 4MB
+      min_wal_size = 1GB
+      max_wal_size = 4GB
+  
+  # Metrics
+  metrics:
+    enabled: false
+    serviceMonitor:
+      enabled: false
+
+# Redis cache (Bitnami)
+redis:
+  enabled: false
+  
+  # Redis authentication
+  auth:
+    enabled: true
+    password: ""
+    # Use existing secret for credentials
+    existingSecret: ""
+    existingSecretPasswordKey: "redis-password"
+  
+  # Redis architecture
+  architecture: standalone  # or replication
+  
+  # Master configuration
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+    # Redis configuration
+    configuration: |-
+      # Redis configuration for Paperless
+      maxmemory 768mb
+      maxmemory-policy allkeys-lru
+      save 900 1
+      save 300 10
+      save 60 10000
+      rdbcompression yes
+      rdbchecksum yes
+      # Enable AOF persistence
+      appendonly yes
+      appendfsync everysec
+      auto-aof-rewrite-percentage 100
+      auto-aof-rewrite-min-size 64mb
+  
+  # Replica configuration (if using replication)
+  replica:
+    replicaCount: 1
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: ""
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+  
+  # Metrics
+  metrics:
+    enabled: false
+    serviceMonitor:
+      enabled: false
+  
+  # Sentinel (if using replication with sentinel)
+  sentinel:
+    enabled: false

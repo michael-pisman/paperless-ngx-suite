@@ -1,0 +1,230 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "paperless-ai.fullname" . }}
+  labels:
+    {{- include "paperless-ai.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "paperless-ai.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "paperless-ai.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          env:
+            # Redis configuration
+            {{- if .Values.redis.enabled }}
+            {{- if .Values.redis.existingSecret }}
+            - name: REDIS_URL
+              value: "redis://:$(REDIS_PASSWORD)@{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.database }}"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.existingSecret }}
+                  key: {{ .Values.redis.secretKeys.password }}
+            {{- else }}
+            - name: REDIS_URL
+              value: "redis://:$(REDIS_PASSWORD)@{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.database }}"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "paperless-ai.fullname" . }}-redis
+                  key: password
+            {{- end }}
+            {{- end }}
+            
+            # LLM Configuration
+            - name: LLM_PROVIDER
+              value: {{ .Values.config.llm.provider | quote }}
+            - name: LLM_MODEL
+              value: {{ .Values.config.llm.model | quote }}
+            {{- if .Values.config.llm.apiKey }}
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.existingSecret | default (printf "%s-ai" (include "paperless-ai.fullname" .)) }}
+                  key: {{ .Values.config.secretKeys.llmApiKey }}
+            {{- end }}
+            {{- if .Values.config.llm.apiUrl }}
+            - name: LLM_API_URL
+              value: {{ .Values.config.llm.apiUrl | quote }}
+            {{- end }}
+            - name: LLM_MAX_TOKENS
+              value: {{ .Values.config.llm.maxTokens | quote }}
+            - name: LLM_TEMPERATURE
+              value: {{ .Values.config.llm.temperature | quote }}
+            
+            # Ollama Configuration
+            {{- if eq .Values.config.llm.provider "ollama" }}
+            - name: OLLAMA_HOST
+              value: {{ .Values.config.ollama.host | quote }}
+            - name: OLLAMA_PORT
+              value: {{ .Values.config.ollama.port | quote }}
+            - name: OLLAMA_MODEL
+              value: {{ .Values.config.ollama.model | quote }}
+            {{- end }}
+            
+            # Hugging Face Configuration
+            {{- if eq .Values.config.llm.provider "huggingface" }}
+            {{- if .Values.config.huggingface.apiKey }}
+            - name: HUGGINGFACE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.existingSecret | default (printf "%s-ai" (include "paperless-ai.fullname" .)) }}
+                  key: {{ .Values.config.secretKeys.huggingfaceApiKey }}
+            {{- end }}
+            - name: HUGGINGFACE_MODEL
+              value: {{ .Values.config.huggingface.model | quote }}
+            {{- end }}
+            
+            # Document Processing Configuration
+            - name: CHUNK_SIZE
+              value: {{ .Values.config.processing.chunkSize | quote }}
+            - name: CHUNK_OVERLAP
+              value: {{ .Values.config.processing.chunkOverlap | quote }}
+            - name: BATCH_SIZE
+              value: {{ .Values.config.processing.batchSize | quote }}
+            - name: MAX_DOCUMENT_SIZE
+              value: {{ .Values.config.processing.maxDocumentSize | quote }}
+            - name: SUPPORTED_FORMATS
+              value: {{ .Values.config.processing.supportedFormats | quote }}
+            
+            # Embeddings Configuration
+            - name: EMBEDDINGS_PROVIDER
+              value: {{ .Values.config.embeddings.provider | quote }}
+            - name: EMBEDDINGS_MODEL
+              value: {{ .Values.config.embeddings.model | quote }}
+            - name: EMBEDDINGS_DIMENSIONS
+              value: {{ .Values.config.embeddings.dimensions | quote }}
+            
+            # Vector Database Configuration
+            - name: VECTOR_DB_PROVIDER
+              value: {{ .Values.config.vectorDb.provider | quote }}
+            - name: VECTOR_DB_PERSIST_PATH
+              value: {{ .Values.config.vectorDb.persistPath | quote }}
+            {{- if eq .Values.config.vectorDb.provider "pinecone" }}
+            {{- if .Values.config.vectorDb.pineconeApiKey }}
+            - name: PINECONE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "paperless-ai.fullname" . }}-ai
+                  key: pinecone-api-key
+            {{- end }}
+            {{- if .Values.config.vectorDb.pineconeEnvironment }}
+            - name: PINECONE_ENVIRONMENT
+              value: {{ .Values.config.vectorDb.pineconeEnvironment | quote }}
+            {{- end }}
+            {{- else if eq .Values.config.vectorDb.provider "weaviate" }}
+            {{- if .Values.config.vectorDb.weaviateApiKey }}
+            - name: WEAVIATE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "paperless-ai.fullname" . }}-ai
+                  key: weaviate-api-key
+            {{- end }}
+            {{- if .Values.config.vectorDb.weaviateUrl }}
+            - name: WEAVIATE_URL
+              value: {{ .Values.config.vectorDb.weaviateUrl | quote }}
+            {{- end }}
+            {{- end }}
+            
+            # Cache Configuration
+            - name: CACHE_ENABLED
+              value: {{ .Values.config.cache.enabled | quote }}
+            - name: CACHE_TTL
+              value: {{ .Values.config.cache.ttl | quote }}
+            - name: CACHE_MAX_SIZE
+              value: {{ .Values.config.cache.maxSize | quote }}
+            
+            # Performance Configuration
+            - name: WORKERS
+              value: {{ .Values.config.workers | quote }}
+            - name: MAX_CONCURRENT_REQUESTS
+              value: {{ .Values.config.maxConcurrentRequests | quote }}
+            - name: REQUEST_TIMEOUT
+              value: {{ .Values.config.requestTimeout | quote }}
+            
+            # Logging Configuration
+            - name: LOG_LEVEL
+              value: {{ .Values.config.logLevel | quote }}
+            - name: ENABLE_METRICS
+              value: {{ .Values.config.enableMetrics | quote }}
+            
+            # Custom environment variables
+            {{- range $key, $value := .Values.config.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          
+          volumeMounts:
+            {{- if .Values.persistence.enabled }}
+            - name: data
+              mountPath: /app/data
+            {{- end }}
+            {{- if .Values.persistence.vectorDb.enabled }}
+            - name: vectordb
+              mountPath: /app/vectordb
+            {{- end }}
+            {{- if .Values.persistence.models.enabled }}
+            - name: models
+              mountPath: /app/models
+            {{- end }}
+          
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      
+      volumes:
+        {{- if .Values.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "paperless-ai.fullname" . }}-data
+        {{- end }}
+        {{- if .Values.persistence.vectorDb.enabled }}
+        - name: vectordb
+          persistentVolumeClaim:
+            claimName: {{ include "paperless-ai.fullname" . }}-vectordb
+        {{- end }}
+        {{- if .Values.persistence.models.enabled }}
+        - name: models
+          persistentVolumeClaim:
+            claimName: {{ include "paperless-ai.fullname" . }}-models
+        {{- end }}
+      
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

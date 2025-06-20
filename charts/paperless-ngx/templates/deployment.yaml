@@ -1,0 +1,214 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "paperless-ngx.fullname" . }}
+  labels:
+    {{- include "paperless-ngx.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "paperless-ngx.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "paperless-ngx.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          env:
+            # Database configuration
+            - name: PAPERLESS_DBHOST
+              value: {{ .Values.database.host | quote }}
+            - name: PAPERLESS_DBPORT
+              value: {{ .Values.database.port | quote }}
+            - name: PAPERLESS_DBNAME
+              value: {{ .Values.database.name | quote }}
+            - name: PAPERLESS_DBUSER
+              value: {{ .Values.database.username | quote }}
+            - name: PAPERLESS_DBPASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret | default (printf "%s-database" (include "paperless-ngx.fullname" .)) }}
+                  key: {{ .Values.database.secretKeys.password }}
+            
+            # Redis configuration
+            {{- if .Values.redis.enabled }}
+            {{- if .Values.redis.existingSecret }}
+            - name: PAPERLESS_REDIS
+              value: "redis://:$(REDIS_PASSWORD)@{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.database }}"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.existingSecret }}
+                  key: {{ .Values.redis.secretKeys.password }}
+            {{- else }}
+            - name: PAPERLESS_REDIS
+              value: "redis://:$(REDIS_PASSWORD)@{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.database }}"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "paperless-ngx.fullname" . }}-redis
+                  key: password
+            {{- end }}
+            {{- end }}
+            
+            # Application configuration
+            {{- if .Values.config.url }}
+            - name: PAPERLESS_URL
+              value: {{ .Values.config.url | quote }}
+            {{- end }}
+            - name: PAPERLESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.existingSecret | default (printf "%s-app" (include "paperless-ngx.fullname" .)) }}
+                  key: {{ .Values.config.secretKeys.secretKey }}
+            - name: PAPERLESS_ALLOWED_HOSTS
+              value: {{ .Values.config.allowedHosts | quote }}
+            - name: PAPERLESS_CORS_ALLOWED_HOSTS
+              value: {{ .Values.config.corsAllowedHosts | quote }}
+            - name: PAPERLESS_TIME_ZONE
+              value: {{ .Values.config.timeZone | quote }}
+            
+            # Admin user configuration
+            - name: PAPERLESS_ADMIN_USER
+              value: {{ .Values.config.adminUser | quote }}
+            - name: PAPERLESS_ADMIN_MAIL
+              value: {{ .Values.config.adminMail | quote }}
+            - name: PAPERLESS_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.existingSecret | default (printf "%s-app" (include "paperless-ngx.fullname" .)) }}
+                  key: {{ .Values.config.secretKeys.adminPassword }}
+            
+            # OCR configuration
+            - name: PAPERLESS_OCR_LANGUAGE
+              value: {{ .Values.config.ocrLanguage | quote }}
+            - name: PAPERLESS_OCR_MODE
+              value: {{ .Values.config.ocrMode | quote }}
+            - name: PAPERLESS_OCR_SKIP_ARCHIVE_FILE
+              value: {{ .Values.config.ocrSkipArchiveFile | quote }}
+            - name: PAPERLESS_OCR_CLEAN_UP_ARCHIVE_FILE
+              value: {{ .Values.config.ocrCleanUpArchiveFile | quote }}
+            
+            # Document processing
+            - name: PAPERLESS_CONSUMER_POLLING
+              value: {{ .Values.config.consumerPolling | quote }}
+            - name: PAPERLESS_CONSUMER_RECURSIVE
+              value: {{ .Values.config.consumerRecursive | quote }}
+            - name: PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS
+              value: {{ .Values.config.consumerSubdirAsTag | quote }}
+            - name: PAPERLESS_TASK_WORKERS
+              value: {{ .Values.config.taskWorkers | quote }}
+            
+            # Email configuration
+            {{- if .Values.config.emailHost }}
+            - name: PAPERLESS_EMAIL_HOST
+              value: {{ .Values.config.emailHost | quote }}
+            - name: PAPERLESS_EMAIL_PORT
+              value: {{ .Values.config.emailPort | quote }}
+            {{- if .Values.config.emailHostUser }}
+            - name: PAPERLESS_EMAIL_HOST_USER
+              value: {{ .Values.config.emailHostUser | quote }}
+            {{- end }}
+            {{- if .Values.config.emailHostPassword }}
+            - name: PAPERLESS_EMAIL_HOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.existingSecret | default (printf "%s-app" (include "paperless-ngx.fullname" .)) }}
+                  key: {{ .Values.config.secretKeys.emailPassword }}
+            {{- end }}
+            - name: PAPERLESS_EMAIL_USE_TLS
+              value: {{ .Values.config.emailUseTLS | quote }}
+            - name: PAPERLESS_EMAIL_USE_SSL
+              value: {{ .Values.config.emailUseSSL | quote }}
+            {{- end }}
+            
+            # Logging
+            - name: PAPERLESS_LOGROTATE_MAX_SIZE
+              value: "1048576"
+            - name: PAPERLESS_LOGROTATE_MAX_BACKUPS
+              value: "20"
+            
+            # Custom environment variables
+            {{- range $key, $value := .Values.config.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          
+          volumeMounts:
+            - name: data
+              mountPath: /usr/src/paperless/data
+            {{- if .Values.persistence.media.enabled }}
+            - name: media
+              mountPath: /usr/src/paperless/media
+            {{- end }}
+            {{- if .Values.persistence.export.enabled }}
+            - name: export
+              mountPath: /usr/src/paperless/export
+            {{- end }}
+            {{- if .Values.persistence.consume.enabled }}
+            - name: consume
+              mountPath: /usr/src/paperless/consume
+            {{- end }}
+          
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "paperless-ngx.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.persistence.media.enabled }}
+        - name: media
+          persistentVolumeClaim:
+            claimName: {{ include "paperless-ngx.fullname" . }}-media
+        {{- end }}
+        {{- if .Values.persistence.export.enabled }}
+        - name: export
+          persistentVolumeClaim:
+            claimName: {{ include "paperless-ngx.fullname" . }}-export
+        {{- end }}
+        {{- if .Values.persistence.consume.enabled }}
+        - name: consume
+          persistentVolumeClaim:
+            claimName: {{ include "paperless-ngx.fullname" . }}-consume
+        {{- end }}
+      
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

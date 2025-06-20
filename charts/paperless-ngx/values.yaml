@@ -1,0 +1,169 @@
+# Default values for paperless-ngx
+replicaCount: 1
+
+image:
+  repository: ghcr.io/paperless-ngx/paperless-ngx
+  pullPolicy: IfNotPresent
+  tag: "1.17.4"
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: paperless.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 20Gi
+  # Additional volume mounts
+  media:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+  data:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  export:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+  consume:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+
+# Database configuration
+database:
+  type: postgresql  # postgresql or mariadb
+  host: paperless-ngx-suite-postgresql  # Bitnami PostgreSQL service name
+  port: 5432
+  name: paperless
+  username: paperless
+  password: ""
+  existingSecret: ""
+  secretKeys:
+    password: "password"
+
+# Redis configuration
+redis:
+  enabled: true
+  host: paperless-ngx-suite-redis-master  # Bitnami Redis service name
+  port: 6379
+  password: ""
+  database: 0
+  existingSecret: ""
+  secretKeys:
+    password: "password"
+
+# Paperless-NGX configuration
+config:
+  # Basic settings
+  url: "http://localhost:8000"
+  secretKey: ""
+  allowedHosts: "*"
+  corsAllowedHosts: "http://localhost:8000"
+  forceScriptName: ""
+  staticUrl: "/static/"
+  
+  # User settings
+  adminUser: "admin"
+  adminMail: "admin@example.com"
+  adminPassword: ""
+  
+  # Secrets configuration
+  existingSecret: ""  # Use existing secret for app config
+  secretKeys:
+    secretKey: "secret-key"
+    adminPassword: "admin-password"
+    emailPassword: "email-password"
+  
+  # OCR settings
+  ocrLanguage: "eng"
+  ocrMode: "skip"
+  ocrSkipArchiveFile: "with_text"
+  ocrCleanUpArchiveFile: "false"
+  ocrDeskew: "true"
+  ocrRotatePages: "true"
+  ocrRotatePagesThreshold: "12.0"
+  
+  # Document processing
+  consumerPolling: "0"
+  consumerRecursive: "true"
+  consumerSubdirAsTag: "true"
+  consumerIgnorePattern: "[!.]*,.*"
+  taskWorkers: "1"
+  threadsPerWorker: "1"
+  workerTimeout: "1800"
+  
+  # Document retention
+  documentRetentionDays: ""
+  
+  # Email settings
+  emailHost: ""
+  emailPort: "587"
+  emailHostUser: ""
+  emailHostPassword: ""
+  emailUseSSL: "false"
+  emailUseTLS: "true"
+  
+  # Internationalization
+  timeZone: "UTC"
+  
+  # Logging
+  logLevel: "WARNING"
+  
+  # Custom environment variables
+  extraEnv: {}
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Node selector and affinity
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Security context
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5

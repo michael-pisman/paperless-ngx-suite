@@ -1,0 +1,6 @@
+apiVersion: v2
+name: paperless-ngx
+description: A Helm chart for Paperless-NGX
+type: application
+version: 1.0.0
+appVersion: "1.17.4"

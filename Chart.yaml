@@ -1,0 +1,35 @@
+apiVersion: v2
+name: paperless-ngx-suite
+description: A Helm chart for Paperless-NGX suite with AI capabilities
+icon: "https://docs.paperless-ngx.com/assets/logo.svg"
+type: application
+version: 0.1.0
+appVersion: "1.17.4"
+
+dependencies:
+  - name: paperless-ngx
+    version: ">=1.0.0"
+    repository: "file://charts/paperless-ngx"
+  - name: paperless-ai
+    version: ">=0.1.0"
+    repository: "file://charts/paperless-ai"
+  - name: postgresql
+    version: "15.5.32"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: redis
+    version: "20.1.7"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+
+maintainers:
+  - name: "Paperless-NGX Community"
+    url: "https://github.com/paperless-ngx/paperless-ngx"
+
+keywords:
+  - paperless
+  - document-management
+  - ocr
+  - ai
+  - postgresql
+  - redis

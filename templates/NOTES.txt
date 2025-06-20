@@ -1,0 +1,57 @@
+Paperless-NGX Suite has been deployed successfully! 🎉
+
+{{- if (index (index .Values "paperless-ngx" "ingress") "enabled") }}
+
+🌐 **Web Access:**
+{{- range $host := index (index .Values "paperless-ngx" "ingress") "hosts" }}
+  - Paperless-NGX: https://{{ $host.host }}
+{{- end }}
+{{- range $host := index (index .Values "paperless-ai" "ingress") "hosts" }}
+  - Paperless-AI: https://{{ $host.host }}
+{{- end }}
+
+{{- else }}
+
+🔗 **Local Access:**
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name=paperless-ngx,app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:8000 to use Paperless-NGX"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8000:8000
+
+  export AI_POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name=paperless-ai,app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:8080 to use Paperless-AI"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $AI_POD_NAME 8080:8080
+
+{{- end }}
+
+📋 **Admin Credentials:**
+  Username: {{ index (index .Values "paperless-ngx" "config") "adminUser" | default "admin" }}
+  Password: {{ index (index .Values "paperless-ngx" "config") "adminPassword" | default "Run: kubectl get secret --namespace {{ .Release.Namespace }} {{ include \"paperless-ngx.fullname\" (index .Subcharts \"paperless-ngx\") }}-app -o jsonpath=\"{.data.admin-password}\" | base64 --decode" }}
+
+🔧 **Useful Commands:**
+  - Check deployment status: kubectl get pods -n {{ .Release.Namespace }}
+  - View logs: kubectl logs -f deployment/{{ .Release.Name }}-paperless-ngx -n {{ .Release.Namespace }}
+  - View AI logs: kubectl logs -f deployment/{{ .Release.Name }}-paperless-ai -n {{ .Release.Namespace }}
+
+{{- if .Values.postgresql.enabled }}
+
+💽 **Database Info:**
+  PostgreSQL is running as: {{ .Release.Name }}-postgresql
+  Database: {{ .Values.postgresql.auth.database | default "paperless" }}
+  Username: {{ .Values.postgresql.auth.username | default "paperless" }}
+
+{{- end }}
+
+{{- if .Values.redis.enabled }}
+
+⚡ **Cache Info:**
+  Redis is running as: {{ .Release.Name }}-redis-master
+
+{{- end }}
+
+🚀 **Getting Started:**
+  1. Log in with the admin credentials above
+  2. Configure document consumption directory
+  3. Set up document tags and categories
+  4. Start uploading documents!
+
+📚 **Documentation:** https://docs.paperless-ngx.com/

@@ -1,0 +1,161 @@
+# Default values for paperless-ai
+replicaCount: 1
+
+image:
+  repository: ghcr.io/paperless-ngx/paperless-ai
+  pullPolicy: IfNotPresent
+  tag: "0.1.0"
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: paperless-ai.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Redis configuration
+redis:
+  enabled: true
+  host: paperless-ngx-suite-redis-master  # Bitnami Redis service name
+  port: 6379
+  password: ""
+  database: 1
+  existingSecret: ""
+  secretKeys:
+    password: "password"
+
+# AI/ML Configuration
+config:
+  # Secrets configuration
+  existingSecret: ""  # Use existing secret for AI config
+  secretKeys:
+    llmApiKey: "llm-api-key"
+    huggingfaceApiKey: "huggingface-api-key"
+    pineconeApiKey: "pinecone-api-key"
+    weaviateApiKey: "weaviate-api-key"
+  
+  # LLM Model settings
+  llm:
+    provider: "openai"  # openai, anthropic, ollama, huggingface
+    model: "gpt-3.5-turbo"
+    apiKey: ""
+    apiUrl: ""
+    maxTokens: 4096
+    temperature: 0.1
+    
+  # Ollama specific settings
+  ollama:
+    host: "localhost"
+    port: 11434
+    model: "llama2"
+    
+  # Hugging Face settings
+  huggingface:
+    apiKey: ""
+    model: "google/flan-t5-base"
+    
+  # Document processing settings
+  processing:
+    chunkSize: 1000
+    chunkOverlap: 200
+    batchSize: 10
+    maxDocumentSize: "50MB"
+    supportedFormats: "pdf,txt,docx,html"
+    
+  # Embedding settings
+  embeddings:
+    provider: "openai"  # openai, huggingface, sentence-transformers
+    model: "text-embedding-ada-002"
+    dimensions: 1536
+    
+  # Vector database settings
+  vectorDb:
+    provider: "chroma"  # chroma, pinecone, weaviate
+    persistPath: "/app/vectordb"
+    # Pinecone settings
+    pineconeApiKey: ""
+    pineconeEnvironment: ""
+    # Weaviate settings
+    weaviateApiKey: ""
+    weaviateUrl: ""
+    
+  # Cache settings
+  cache:
+    enabled: true
+    ttl: 3600
+    maxSize: 1000
+    
+  # Performance settings
+  workers: 2
+  maxConcurrentRequests: 10
+  requestTimeout: 300
+  
+  # Logging
+  logLevel: "INFO"
+  enableMetrics: true
+  
+  # Custom environment variables
+  extraEnv: {}
+
+# Persistence for AI models and vector database
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  vectorDb:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+  models:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 1000m
+    memory: 2Gi
+
+# Node selector and affinity
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Security context
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
