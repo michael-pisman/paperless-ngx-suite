@@ -20,6 +20,15 @@ This Helm chart deploys a complete Paperless-NGX suite including both the main P
 
 ## Installing the Chart
 
+### From your GitHub Pages Helm repository
+
+First, add the published repo and update your local index:
+
+```bash
+helm repo add paperless https://michael-pisman.github.io/paperless-ngx-suite
+helm repo update
+```
+
 To install the chart with the release name `paperless`:
 
 ```bash
