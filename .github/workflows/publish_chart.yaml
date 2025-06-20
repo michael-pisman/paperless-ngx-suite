@@ -2,7 +2,8 @@ name: Publish Helm chart
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -44,6 +45,6 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs
           publish_branch: gh-pages
-          destination_dir: docs
+          publish_dir: docs
+          # destination_dir omitted so that docs/ is published at the root of gh-pages
