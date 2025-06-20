@@ -3,27 +3,27 @@ global:
   # Common database configuration
   database:
     type: postgresql  # postgresql or mariadb
-    host: ""
+    host: "paperless-ngx-suite-postgresql"  # Bitnami service name
     port: 5432
     name: paperless
     username: paperless
     password: ""
     # Use existing secret for database credentials
-    existingSecret: ""
+    existingSecret: "paperless-ngx-suite-postgresql"
     secretKeys:
       password: "password"
   
   # Common Redis configuration
   redis:
     enabled: true
-    host: ""
+    host: "paperless-ngx-suite-redis-master"  # Bitnami service name
     port: 6379
     password: ""
     database: 0
     # Use existing secret for Redis credentials
-    existingSecret: ""
+    existingSecret: "paperless-ngx-suite-redis"
     secretKeys:
-      password: "password"
+      password: "redis-password"
 
 paperless-ngx:
   # Application settings
@@ -38,6 +38,29 @@ paperless-ngx:
     type: ClusterIP
     port: 8000
     targetPort: 8000
+  
+  # Database configuration - use global values or Bitnami defaults
+  database:
+    type: postgresql
+    host: "paperless-ngx-suite-postgresql"  # Bitnami PostgreSQL service name
+    port: 5432
+    name: paperless
+    username: paperless
+    password: ""
+    existingSecret: "paperless-ngx-suite-postgresql"
+    secretKeys:
+      password: "password"
+  
+  # Redis configuration - use global values or Bitnami defaults  
+  redis:
+    enabled: true
+    host: "paperless-ngx-suite-redis-master"  # Bitnami Redis service name  
+    port: 6379
+    password: ""
+    database: 0
+    existingSecret: "paperless-ngx-suite-redis"
+    secretKeys:
+      password: "redis-password"
   
   # Ingress configuration
   ingress:
@@ -162,6 +185,17 @@ paperless-ai:
     port: 8080
     targetPort: 8080
   
+  # Redis configuration - use global values or Bitnami defaults
+  redis:
+    enabled: true
+    host: "paperless-ngx-suite-redis-master"  # Bitnami Redis service name
+    port: 6379
+    password: ""
+    database: 0
+    existingSecret: "paperless-ngx-suite-redis"
+    secretKeys:
+      password: "redis-password"
+  
   # Ingress configuration
   ingress:
     enabled: false
@@ -271,11 +305,11 @@ paperless-ai:
 # External dependencies using Bitnami charts
 # PostgreSQL database (Bitnami)
 postgresql:
-  enabled: false
+  enabled: true  # Changed to true for this deployment
   auth:
-    postgresPassword: ""
+    postgresPassword: "postgres-admin-password"
     username: "paperless"
-    password: ""
+    password: "paperless-db-password"
     database: "paperless"
     # Use existing secret for credentials
     existingSecret: ""
@@ -325,12 +359,12 @@ postgresql:
 
 # Redis cache (Bitnami)
 redis:
-  enabled: false
+  enabled: true  # Changed to true for this deployment
   
   # Redis authentication
   auth:
     enabled: true
-    password: ""
+    password: "redis-password"
     # Use existing secret for credentials
     existingSecret: ""
     existingSecretPasswordKey: "redis-password"
