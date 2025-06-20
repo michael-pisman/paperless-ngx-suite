@@ -9,27 +9,26 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      # 1) checkout full history (needed for pages deploy)
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # 2) install Helm CLI
       - name: Set up Helm
         uses: azure/setup-helm@v3
 
-      # 3) lint (optional) and package the chart into docs/
+      - name: Update chart dependencies
+        run: helm dependency update .
+
       - name: Lint chart
         run: helm lint .
+
       - name: Package chart
         run: helm package . --destination docs
 
-      # 4) regenerate index.yaml in docs/
       - name: Create Helm repo index
         run: helm repo index docs --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/docs
 
-      # 5) push docs/ to the gh-pages branch
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
