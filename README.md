@@ -66,7 +66,7 @@ The following table lists the configurable global parameters:
 |-----------|-------------|---------|
 | `paperless-ngx.replicaCount` | Number of replicas | `1` |
 | `paperless-ngx.image.repository` | Image repository | `ghcr.io/paperless-ngx/paperless-ngx` |
-| `paperless-ngx.image.tag` | Image tag | `1.17.4` |
+| `paperless-ngx.image.tag` | Image tag | `latest` |
 | `paperless-ngx.service.type` | Service type | `ClusterIP` |
 | `paperless-ngx.service.port` | Service port | `8000` |
 | `paperless-ngx.ingress.enabled` | Enable ingress | `false` |
@@ -83,8 +83,8 @@ The following table lists the configurable global parameters:
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `paperless-ai.replicaCount` | Number of replicas | `1` |
-| `paperless-ai.image.repository` | Image repository | `ghcr.io/paperless-ngx/paperless-ai` |
-| `paperless-ai.image.tag` | Image tag | `0.1.0` |
+| `paperless-ai.image.repository` | Image repository | `clusterzx/paperless-ai` |
+| `paperless-ai.image.tag` | Image tag | `latest` |
 | `paperless-ai.service.type` | Service type | `ClusterIP` |
 | `paperless-ai.service.port` | Service port | `8080` |
 | `paperless-ai.config.llm.provider` | LLM provider | `openai` |
