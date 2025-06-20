@@ -1,0 +1,270 @@
+# Example configuration for Paperless-NGX Suite
+# This file demonstrates common configuration scenarios
+
+# Basic production setup with external database and Redis
+global:
+  database:
+    type: postgresql
+    host: "postgresql.example.com"
+    port: 5432
+    name: "paperless"
+    username: "paperless"
+    password: "your-db-password"
+  
+  redis:
+    enabled: true
+    host: "redis.example.com"
+    port: 6379
+    password: "your-redis-password"
+    database: 0
+
+paperless-ngx:
+  replicaCount: 1
+  
+  image:
+    tag: "1.17.4"
+  
+  # Enable ingress for external access
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    hosts:
+      - host: paperless.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: paperless-tls
+        hosts:
+          - paperless.example.com
+  
+  # Production-ready storage configuration
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 20Gi
+    media:
+      enabled: true
+      size: 100Gi
+      storageClass: "standard"
+    data:
+      enabled: true
+      size: 10Gi
+      storageClass: "fast-ssd"
+    export:
+      enabled: true
+      size: 10Gi
+      storageClass: "standard"
+    consume:
+      enabled: true
+      size: 5Gi
+      storageClass: "standard"
+  
+  # Application configuration
+  config:
+    url: "https://paperless.example.com"
+    adminUser: "admin"
+    adminMail: "admin@example.com"
+    adminPassword: "secure-admin-password"
+    
+    # OCR settings for multi-language support
+    ocrLanguage: "eng+fra+deu"
+    ocrMode: "redo"
+    
+    # Document processing optimization
+    taskWorkers: "4"
+    threadsPerWorker: "2"
+    
+    # Email configuration
+    emailHost: "smtp.example.com"
+    emailPort: "587"
+    emailHostUser: "paperless@example.com"
+    emailHostPassword: "email-password"
+    emailUseTLS: "true"
+    
+    # Timezone
+    timeZone: "Europe/London"
+    
+    # Logging
+    logLevel: "INFO"
+  
+  # Resource allocation
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+
+paperless-ai:
+  replicaCount: 1
+  
+  image:
+    tag: "0.1.0"
+  
+  # Enable ingress for AI service
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    hosts:
+      - host: paperless-ai.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: paperless-ai-tls
+        hosts:
+          - paperless-ai.example.com
+  
+  # AI Configuration with OpenAI
+  config:
+    llm:
+      provider: "openai"
+      model: "gpt-4"
+      apiKey: "sk-your-openai-api-key"
+      maxTokens: 4096
+      temperature: 0.1
+    
+    # Embeddings configuration
+    embeddings:
+      provider: "openai"
+      model: "text-embedding-ada-002"
+      dimensions: 1536
+    
+    # Vector database configuration
+    vectorDb:
+      provider: "chroma"
+      persistPath: "/app/vectordb"
+    
+    # Document processing settings
+    processing:
+      chunkSize: 1000
+      chunkOverlap: 200
+      batchSize: 5
+      maxDocumentSize: "100MB"
+    
+    # Performance settings
+    workers: 4
+    maxConcurrentRequests: 20
+    requestTimeout: 300
+    
+    # Caching
+    cache:
+      enabled: true
+      ttl: 7200  # 2 hours
+      maxSize: 2000
+    
+    # Logging
+    logLevel: "INFO"
+    enableMetrics: true
+  
+  # Storage for AI components
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 10Gi
+    vectorDb:
+      enabled: true
+      size: 50Gi
+      storageClass: "fast-ssd"
+    models:
+      enabled: true
+      size: 10Gi
+      storageClass: "fast-ssd"
+  
+  # Resource allocation for AI workloads
+  resources:
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+    requests:
+      cpu: 2000m
+      memory: 4Gi
+
+# Optional: Deploy PostgreSQL and Redis using Bitnami charts
+postgresql:
+  enabled: true  # Set to true to deploy PostgreSQL
+  auth:
+    postgresPassword: "postgres-admin-password"
+    username: "paperless"
+    password: "paperless-db-password"
+    database: "paperless"
+  primary:
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: "fast-ssd"
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+    # Optimized PostgreSQL configuration for Paperless
+    configuration: |-
+      max_connections = 200
+      shared_buffers = 512MB
+      effective_cache_size = 2GB
+      maintenance_work_mem = 128MB
+      checkpoint_completion_target = 0.9
+      wal_buffers = 16MB
+      default_statistics_target = 100
+      random_page_cost = 1.1
+      effective_io_concurrency = 200
+      work_mem = 8MB
+      min_wal_size = 2GB
+      max_wal_size = 8GB
+      max_worker_processes = 8
+      max_parallel_workers_per_gather = 4
+      max_parallel_workers = 8
+      max_parallel_maintenance_workers = 4
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+redis:
+  enabled: true  # Set to true to deploy Redis
+  auth:
+    enabled: true
+    password: "redis-password"
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: "fast-ssd"
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    # Optimized Redis configuration for Paperless
+    configuration: |-
+      maxmemory 1536mb
+      maxmemory-policy allkeys-lru
+      save 900 1
+      save 300 10
+      save 60 10000
+      rdbcompression yes
+      rdbchecksum yes
+      appendonly yes
+      appendfsync everysec
+      auto-aof-rewrite-percentage 100
+      auto-aof-rewrite-min-size 64mb
+      tcp-keepalive 300
+      timeout 0
+      tcp-backlog 511
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true

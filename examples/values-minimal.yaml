@@ -1,0 +1,97 @@
+# Minimal Example Configuration for Paperless-NGX Suite
+# Only essential settings that users commonly need to change
+
+# IMPORTANT: Update these URLs to match your domain
+# Example: paperless.yourdomain.com, paperless-ai.yourdomain.com
+
+# Option 1: Using external databases (comment out postgresql/redis sections below)
+# global:
+#   database:
+#     host: "postgresql.example.com"
+#     password: "your-db-password"
+#   redis:
+#     host: "redis.example.com"
+#     password: "your-redis-password"
+
+paperless-ngx:
+  # Basic application settings
+  config:
+    url: "https://paperless.example.com"
+    adminUser: "admin"
+    adminMail: "admin@example.com"
+    adminPassword: "change-me-secure-password"
+    secretKey: "your-32-plus-character-secret-key-here-make-it-random-and-secure"
+  
+  # Database configuration - use existing secret from Bitnami PostgreSQL
+  database:
+    existingSecret: "paperless-ngx-suite-postgresql"
+    secretKeys:
+      password: "password"
+  
+  # Redis configuration - use existing secret from Bitnami Redis
+  redis:
+    existingSecret: "paperless-ngx-suite-redis"
+    secretKeys:
+      password: "redis-password"
+  
+  # Enable web access
+  ingress:
+    enabled: true
+    hosts:
+      - host: paperless.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - hosts:
+          - paperless.example.com
+        secretName: paperless-tls
+
+paperless-ai:
+  # AI Configuration - Choose your LLM provider
+  config:
+    llm:
+      provider: "ollama"
+      model: "llama3.2"
+    
+    ollama:
+      host: "ollama.ollama.svc"
+      model: "llama3.2"
+      port: 11434
+    
+    embeddings:
+      provider: "ollama"  # openai, huggingface, sentence-transformers
+      model: "llama3.2"
+      dimensions: 3072
+  
+  # Redis configuration - use existing secret from Bitnami Redis  
+  redis:
+    existingSecret: "paperless-ngx-suite-redis"
+    secretKeys:
+      password: "redis-password"
+  
+  # Enable web access
+  ingress:
+    enabled: true
+    hosts:
+      - host: paperless-ai.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - hosts:
+          - paperless-ai.example.com
+        secretName: paperless-ai-tls
+
+# Option 2: Deploy PostgreSQL and Redis with the chart
+postgresql:
+  enabled: true
+  auth:
+    username: "paperless"
+    password: "paperless-db-password"
+    database: "paperless"
+
+redis:
+  enabled: true
+  auth:
+    password: "redis-password"
