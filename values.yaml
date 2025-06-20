@@ -330,26 +330,6 @@ postgresql:
       requests:
         cpu: 500m
         memory: 1Gi
-    # PostgreSQL configuration
-    pgHbaConfiguration: |-
-      local all all trust
-      host all all 127.0.0.1/32 trust
-      host all all ::1/128 trust
-      host all all all md5
-    configuration: |-
-      # PostgreSQL configuration for Paperless
-      max_connections = 200
-      shared_buffers = 256MB
-      effective_cache_size = 1GB
-      maintenance_work_mem = 64MB
-      checkpoint_completion_target = 0.9
-      wal_buffers = 16MB
-      default_statistics_target = 100
-      random_page_cost = 1.1
-      effective_io_concurrency = 200
-      work_mem = 4MB
-      min_wal_size = 1GB
-      max_wal_size = 4GB
   
   # Metrics
   metrics:
@@ -385,21 +365,6 @@ redis:
       requests:
         cpu: 250m
         memory: 512Mi
-    # Redis configuration
-    configuration: |-
-      # Redis configuration for Paperless
-      maxmemory 768mb
-      maxmemory-policy allkeys-lru
-      save 900 1
-      save 300 10
-      save 60 10000
-      rdbcompression yes
-      rdbchecksum yes
-      # Enable AOF persistence
-      appendonly yes
-      appendfsync everysec
-      auto-aof-rewrite-percentage 100
-      auto-aof-rewrite-min-size 64mb
   
   # Replica configuration (if using replication)
   replica:
